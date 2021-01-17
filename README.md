@@ -116,6 +116,75 @@ module "kubernetes" {
 }
 ```
 
+terragrunt example
+```hcl
+
+# stage/terragrunt.hcl
+locals {
+  aws_region = "us-east-1"
+}
+remote_state {
+  backend = "s3"
+  generate = {
+    path      = "backend.tf"
+    if_exists = "overwrite_terragrunt"
+  }
+  config = {
+    bucket = "485540557572-terraform"
+
+    key = "${path_relative_to_include()}/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "my-lock-table"
+  }
+}
+terraform {
+  source = "git@github.com:Marquesledivan/terraform-aws-kubernetes.git"
+}
+
+inputs = {
+  instance_count = 3
+  region = local.aws_region
+  instance = "t2.micro"
+  aws_region    = "us-east-1"
+  cluster_name  = "aws-kubernetes"
+  master_instance_type = "t2.medium"
+  worker_instance_type = "t2.medium"
+  ssh_public_key = "~/.ssh/id_rsa.pub"
+  ssh_access_cidr = ["0.0.0.0/0"]
+  api_access_cidr = ["0.0.0.0/0"]
+  min_worker_count = 3
+  max_worker_count = 6
+  hosted_zone = "submarinoviagens.com.br"
+  hosted_zone_private = false
+
+  master_subnet_id = "subnet-0d57857f8a6ea19f2"
+  worker_subnet_ids = [
+      "subnet-0d57857f8a6ea19f2",
+      "subnet-0bf70fecf14f80c15",
+      "subnet-026dbd046826e6dde"
+  ]
+  tags = {
+    Application = "AWS-Kubernetes"
+  }
+
+  tags2 = [
+    {
+      key                 = "Application"
+      value               = "AWS-Kubernetes"
+      propagate_at_launch = true
+    }
+  ]
+  addons = [
+    "https://raw.githubusercontent.com/scholzj/terraform-aws-kubernetes/master/addons/storage-class.yaml",
+    "https://raw.githubusercontent.com/scholzj/terraform-aws-kubernetes/master/addons/heapster.yaml",
+    "https://raw.githubusercontent.com/scholzj/terraform-aws-kubernetes/master/addons/dashboard.yaml",
+    "https://raw.githubusercontent.com/scholzj/terraform-aws-kubernetes/master/addons/external-dns.yaml",
+    "https://raw.githubusercontent.com/scholzj/terraform-aws-kubernetes/master/addons/autoscaler.yaml"
+  ]
+}
+
+```
 An example of how to include this can be found in the [examples](examples/) dir.
 
 ## Addons
